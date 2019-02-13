@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.wyf.common.log.LogAutoConfig,\
+  com.wyf.common.log.properties.LogProperties  
