@@ -8,8 +8,8 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
@@ -26,24 +26,23 @@ import javax.servlet.http.HttpServletRequest;
  */
 @Configuration
 @ConditionalOnProperty(prefix = "wyf.log",value = "enabled",matchIfMissing = true)
+@EnableConfigurationProperties(LogProperties.class)
 public class LogAutoConfig {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("log");
 
     private static final  String execution = "@annotation(openLog)" ;
 
+    private final LogProperties logProperties;
 
+    public LogAutoConfig(LogProperties logProperties) {
+        this.logProperties = logProperties;
+    }
 
     @Component
     @Aspect
     public class LogAop {
-
-        private  LogProperties logProperties;
-
-        @Autowired
-        public  LogAop(LogProperties logProperties) {
-            this.logProperties = logProperties;
-            System.out.println(logProperties.getLevel());
+        public  LogAop() {
             System.out.println("---------------------------------------------------------");
             System.out.println("----------------------志拦截器已启动---------------------");
             System.out.println("---------------------------------------------------------");
@@ -71,7 +70,12 @@ public class LogAutoConfig {
                 } finally {
                     long endTime = System.currentTimeMillis();
                     spend  = (endTime - startTime);
-                    LOGGER.info(" CLASS_METHOD <{}> REQUEST_ARGS <{}> | RESPONSE <{}> | ERROR <{}> | SPEND <{}ms>",class_method,request_args,response_data,error_msg,spend);
+                    if(error_msg!=null&&!error_msg.equals("")){
+                        log("error"," CLASS_METHOD <{}> REQUEST_ARGS <{}> | RESPONSE <{}> | ERROR <{}> | SPEND <{}ms>",class_method,request_args,response_data,error_msg,spend+"");
+                    }else {
+                        log("info"," CLASS_METHOD <{}> REQUEST_ARGS <{}> | RESPONSE <{}> | ERROR <{}> | SPEND <{}ms>",class_method,request_args,response_data,error_msg,spend+"");
+                    }
+
                 }
 
             }
@@ -96,10 +100,30 @@ public class LogAutoConfig {
             } finally {
                 long endTime = System.currentTimeMillis();
                 spend  = (endTime - startTime);
-                LOGGER.info("URL <{}> | HTTP_METHOD <{}> | IP <{}> | CLASS_METHOD <{}> REQUEST_ARGS <{}> | RESPONSE <{}> | ERROR <{}> | SPEND <{}ms>",url,http_method,ip,class_method,request_args,response_data,error_msg,spend);
+                if(error_msg!=null&&!error_msg.equals("")){
+                    log("error","URL <{}> | HTTP_METHOD <{}> | IP <{}> | CLASS_METHOD <{}> REQUEST_ARGS <{}> | RESPONSE <{}> | ERROR <{}> | SPEND <{}ms>",url,http_method,ip,class_method,request_args,response_data,error_msg,spend+"");
+                }else{
+                    log("info","URL <{}> | HTTP_METHOD <{}> | IP <{}> | CLASS_METHOD <{}> REQUEST_ARGS <{}> | RESPONSE <{}> | ERROR <{}> | SPEND <{}ms>",url,http_method,ip,class_method,request_args,response_data,error_msg,spend+"");
+                }
+
             }
 
         }
+
+        private void log(String level,String msg, String ...args){
+            switch (level){
+                case "info" :
+                    LOGGER.info(msg,args);
+                    break;
+                case "error":
+                    LOGGER.error(msg,args);
+                    break;
+                default:
+                    LOGGER.info(msg,args);
+                    break;
+            }
+        }
+
 
     }
 

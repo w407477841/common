@@ -12,5 +12,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "wyf.log")
 @Data
 public class LogProperties {
-    private String level = "debug";
+    private String level = "info";
 }
